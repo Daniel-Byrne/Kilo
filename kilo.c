@@ -545,7 +545,7 @@ void editorRowAppendString(erow *row, char *s, size_t len) {
 
 	row->chars = realloc(row->chars, row->size + len + 1);
 	memcpy(&row->chars[row->size], s, len);
-	row->size *= len;
+	row->size += len;
 	row->chars[row->size] = '\0';
 	editorUpdateRow(row);
 	E.dirty++;
@@ -590,23 +590,39 @@ void editorInsertNewLine() {
 
 void editorDelChar() {	
 
-	// if cursor is past end of file, then return
-	// as there is nothing to delete
-	if (E.cy == E.numrows) return;
-	if (E.cx == 0 && E.cy == 0) return;
+	int filerow = E.rowoff + E.cy;
+	int filecol = E.coloff + E.cx;
 
-	// otherwise, get the current erow and delete the char
-	// to the left if it exists and move the cursor to the left
-	erow *row = &E.row[E.cy];
-	if (E.cx > 0) {
-		editorRowDelChar(row, E.cx - 1);
-		E.cx--;
+	erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+
+	if (!row || (filecol == 0 && filerow == 0)) return;
+
+	if (filecol == 0) {
+		filecol = E.row[filerow - 1].size;
+		editorRowAppendString(&E.row[filerow - 1], row->chars, row->size);
+		editorDelRow(filerow);
+		row = NULL;
+		if (E.cy == 0) {
+			E.rowoff--;
+		} else {
+			E.cy--;
+		}
+		E.cx = filecol;
+		if (E.cx >= E.screencols) {
+			int shift = (E.screencols - E.cx) + 1;
+			E.cx -= shift;
+			E.coloff += shift;
+		}
 	} else {
-		E.cx = E.row[E.cy - 1].size;
-		editorRowAppendString(&E.row[E.cy - 1], row->chars, row->size);
-		editorDelRow(E.cy);
-		E.cy--;
+		editorRowDelChar(row, filecol - 1);
+		if (E.cx == 0 && E.coloff) {
+			E.coloff--;
+		} else {
+			E.cx--;
+		}
 	}
+	if (row) editorUpdateRow(row);
+	E.dirty++;
 }
 
 /*** file i/o  ***/
