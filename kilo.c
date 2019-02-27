@@ -1,5 +1,3 @@
-// https://viewsourcecode.org/snaptoken/kilo/07.syntaxHighlighting.html#nonprintable-characters
-
 /*** includes ***/
 
 #define _DEFAULT_SOURCE
@@ -307,7 +305,7 @@ void editorUpdateSyntax(erow *row) {
 		if (mcs_len && mce_len && !in_string) {
 			if (in_comment) {
 				row->hl[i] = HL_MLCOMMENT;
-				if (!strcmp(&row->render[i], mce, mce_len)) {
+				if (!strncmp(&row->render[i], mce, mce_len)) {
 					memset(&row->hl[i], HL_MLCOMMENT, mce_len);
 					i += mce_len;
 					in_comment = 0;
@@ -317,10 +315,10 @@ void editorUpdateSyntax(erow *row) {
 					i++;
 					continue;
 				}
-			} else if (!strcmp(&row->render[i], mcs, mcs_len)) {
+			} else if (!strncmp(&row->render[i], mcs, mcs_len)) {
 				memset(&row->hl[i], HL_MLCOMMENT, mcs_len);
 				i += mcs_len;
-				in_comment = 1
+				in_comment = 1;
 				continue;					
 			}
 		}
